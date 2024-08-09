@@ -1,0 +1,302 @@
+openapi: 3.0.0
+info:
+  title: House Management API
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8000
+tags:
+  - name: User
+  - name: House
+  - name: Flat
+paths:
+  /register:
+    post:
+      tags:
+        - User
+      summary: Регистрация пользователя
+      parameters:
+        - name: type
+          in: query
+          description: Тип пользователя (client или moderator)
+          required: false
+          schema:
+            type: string
+            enum: [ client, moderator ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Успешная регистрация
+        '400':
+          description: Некорректный запрос
+        '406':
+          description: Недопустимый email или пароль
+  /login:
+    post:
+      tags:
+        - User
+      summary: Авторизация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: exampleToken
+        '400':
+          description: Некорректный запрос
+        '401':
+          description: Неверные email или пароль
+        '500':
+          description: Внутренняя ошибка сервера
+  /house/{id}:
+    get:
+      tags:
+        - House
+      summary: Получение списка квартир для конкретного дома
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID дома
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешное получение списка квартир
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Flat'
+        '400':
+          description: Некорректный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+  /house/create:
+    post:
+      tags:
+        - House
+      summary: Создание нового дома
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HouseInfo'
+      responses:
+        '200':
+          description: Успешное создание дома
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/House'
+        '400':
+          description: Некорректный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+  /flat/create:
+    post:
+      tags:
+        - Flat
+      summary: Создание новой квартиры
+      parameters:
+        - name: houseId
+          in: query
+          description: ID дома
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlatInfo'
+      responses:
+        '200':
+          description: Успешное создание квартиры
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Flat'
+        '400':
+          description: Некорректный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+  /flat/update:
+    post:
+      tags:
+        - Flat
+      summary: Обновление статуса квартиры
+      parameters:
+        - name: flatId
+          in: query
+          description: Номер квартиры
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          description: Новый статус квартиры
+          required: true
+          schema:
+            type: string
+            enum: [ created, approved, declined, on_moderation ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                flat_id:
+                  type: integer
+                status:
+                  $ref: '#/components/schemas/FlatStatus'
+      responses:
+        '200':
+          description: Успешное обновление статуса
+        '400':
+          description: Некорректный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+
+components:
+  schemas:
+    UserLogin:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "example@yandex.ru"
+        password:
+          type: string
+          format: password
+          example: "12345678"
+      required:
+        - email
+        - password
+
+    UserType:
+      type: string
+      enum:
+        - client
+        - moderator
+
+    FlatInfo:
+      type: object
+      properties:
+        num:
+          type: integer
+          example: 42
+        price:
+          type: integer
+          example: 8000000
+        rooms:
+          type: integer
+          example: 4
+      required:
+        - num
+        - price
+        - rooms
+
+    FlatStatus:
+      type: string
+      enum:
+        - created
+        - approved
+        - declined
+        - on_moderation
+
+    Flat:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        house_id:
+          type: integer
+          example: 1
+        moderator_id:
+          type: integer
+          example: 0
+        flat_info:
+          $ref: '#/components/schemas/FlatInfo'
+        status:
+          $ref: '#/components/schemas/FlatStatus'
+
+    HouseInfo:
+      type: object
+      properties:
+        num:
+          type: integer
+          example: 12
+        year:
+          type: integer
+          example: 1998
+        addr:
+          type: string
+          example: "Moscow"
+        developer:
+          type: string
+          example: ""
+      required:
+        - num
+        - year
+        - addr
+
+    House:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        house_info:
+          $ref: '#/components/schemas/HouseInfo'
