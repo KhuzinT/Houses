@@ -62,6 +62,7 @@ func (h *Handler) updateFlat(w http.ResponseWriter, r *http.Request) {
 
 	// по полученному id квартиры проверяем ее статус в базе
 	// если квартира находится на модерации и модератор не мы,
+	// то изменить статус мы не сможем
 
 	_ /*flat*/, err = h.s.Flat.GetById(uint(flatId))
 	if err != nil {
